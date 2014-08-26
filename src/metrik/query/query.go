@@ -2,9 +2,10 @@ package query
 
 import (
 	"errors"
-	"metrik/projects"
 	"strconv"
 	"time"
+
+	"metrik/projects"
 
 	"github.com/garyburd/redigo/redis"
 )
@@ -29,7 +30,7 @@ func ParseEndParam(rawEnd string) (int64, error) {
 			return -1, errors.New("Invalid value for param: end")
 		}
 	} else {
-		return time.Now().Unix(), nil
+		return time.Now().Unix() * 1000, nil
 	}
 }
 
