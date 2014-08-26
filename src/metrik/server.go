@@ -20,7 +20,7 @@ func main() {
 	}
 	defer r.Close()
 
-	m.Post("/events", binding.Bind(ingest.EventParams{}),
+	m.Post("/v1/events", binding.Bind(ingest.EventParams{}),
 		func(eventParams ingest.EventParams) (int, string) {
 			err := ingest.IngestEvent(r, eventParams)
 			if err != nil {
@@ -29,7 +29,7 @@ func main() {
 			return 201, ""
 		})
 
-	m.Get("/events", func(req *http.Request) (int, string) {
+	m.Get("/v1/events", func(req *http.Request) (int, string) {
 		params := req.URL.Query()
 
 		apiKey := params.Get("api_key")
