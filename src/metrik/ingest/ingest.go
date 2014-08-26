@@ -62,8 +62,8 @@ func IngestEvent(r redis.Conn, eventParams EventParams) error {
 		return errors.New("Invalid API key")
 	}
 
-	timestamp := time.Now().Unix()
-	event, err := formatEvent(timestamp, eventParams)
+	milliTimestamp := time.Now().UnixNano() / 1e6
+	event, err := formatEvent(milliTimestamp, eventParams)
 	if err != nil {
 		return errors.New("Invalid property JSON")
 	}
@@ -73,7 +73,7 @@ func IngestEvent(r redis.Conn, eventParams EventParams) error {
 		return err
 	}
 
-	score := timestamp
+	score := milliTimestamp
 	r.Do("ZADD", eventKey, score, marshalledEvent)
 	return nil
 }
