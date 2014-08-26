@@ -35,8 +35,6 @@ func ParseEndParam(rawEnd string) (int64, error) {
 
 // TODO: better error handling
 func Query(r redis.Conn, apiKey string, eventName string, start, end int64) ([]string, error) {
-	//fmt.Println("query.query!", start, end)
-
 	eventsKey, err := projects.GetEventKey(r, apiKey, eventName)
 	if err != nil {
 		return nil, err
