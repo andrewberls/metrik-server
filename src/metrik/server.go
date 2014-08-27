@@ -58,13 +58,44 @@ func main() {
 			return 400, "Invalid API key"
 		}
 
-		events, err := query.Query(r, projectId, eventName, start, end)
+		events, err := query.RangeQuery(r, projectId, eventName, start, end)
 		if err != nil {
 			return 400, err.Error() // TODO: better status code handling
 		}
 		json := "[" + strings.Join(events, ",") + "]"
 
 		return 200, json
+	})
+
+	m.Get("/v1/hourly_event_counts", func(req *http.Request) (int, string) {
+		params := req.URL.Query()
+
+		apiKey := params.Get("api_key")
+		if apiKey == "" {
+			return 400, "Invalid API key"
+		}
+
+		eventName := params.Get("event")
+		if eventName == "" {
+			return 400, "Invalid event name"
+		}
+
+		start, err := query.ParseStartParam(params.Get("start"))
+		if err != nil {
+			return 400, err.Error()
+		}
+
+		projectId, err := projects.GetProjectId(r, apiKey)
+		if err != nil {
+			return 400, "Invalid API key"
+		}
+
+		hourlyEventCounts, err := query.HourlyEventCounts(r, projectId, eventName, start)
+		if err != nil {
+			return 400, err.Error() // TODO: better status code handling
+		}
+
+		return 200, hourlyEventCounts
 	})
 
 	m.Run()

@@ -27,8 +27,8 @@ func GetProjectId(r redis.Conn, apiKey string) (int, error) {
 //
 // Ex: "projects:2:events:signup"
 //
-func GetEventKey(r redis.Conn, projectId int, name string) string {
-	return fmt.Sprintf("projects:%d:events:%s", projectId, name)
+func GetEventKey(r redis.Conn, projectId int, eventName string) string {
+	return fmt.Sprintf("projects:%d:events:%s", projectId, eventName)
 }
 
 // Generate a key to track the count of an event for this hour,
