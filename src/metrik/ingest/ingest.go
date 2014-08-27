@@ -78,7 +78,8 @@ func IngestEvent(r redis.Conn, eventParams EventParams) error {
 	r.Send("MULTI")
 	r.Send("ZADD", eventKey, score, marshalledEvent)
 	// TODO: increment hourly count for this event
-	r.Send("INCR", projects.GetProjectEventCountKey(projectId))
+	r.Send("INCR", projects.GetEventCountKey(eventKey))
+	r.Send("INCR", projects.GetProjectEventsCountKey(projectId))
 	r.Do("EXEC")
 	return nil
 }

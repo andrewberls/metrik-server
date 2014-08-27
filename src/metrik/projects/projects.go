@@ -8,7 +8,6 @@ import (
 	"github.com/garyburd/redigo/redis"
 )
 
-// TODO: this is lame
 var months = map[string]int{
 	"January":   1,
 	"February":  2,
@@ -24,10 +23,32 @@ var months = map[string]int{
 	"December":  12,
 }
 
+func getYearNo(now time.Time) string {
+	return strconv.Itoa(now.Year())
+}
+
+// Get the current month number 1-12, 0-padded to 2 digits
+func getMonthNo(now time.Time) string {
+	monthNo := strconv.Itoa(months[now.Month().String()])
+	if len(monthNo) == 1 {
+		monthNo = "0" + monthNo
+	}
+	return monthNo
+}
+
+func getDayNo(now time.Time) string {
+	_, _, dayNo := now.Date()
+	return strconv.Itoa(dayNo)
+}
+
+func getHourNo(now time.Time) string {
+	return strconv.Itoa(now.Hour())
+}
+
 // Look up a project's ID using its API key
-// TODO: this lookup is lame, use project key ? or specify api key + project id ?
+// TODO: use project key ? or client specify api key + project id ?
 //
-// Format: "projects:<api_key>"
+// Ex: "projects:abcd-123"
 //
 func GetProjectId(r redis.Conn, apiKey string) (int, error) {
 	projectKey := fmt.Sprintf("projects:%s", apiKey)
@@ -41,22 +62,35 @@ func GetProjectId(r redis.Conn, apiKey string) (int, error) {
 // Use a project API key to look up its ID and generate an event
 // key, including a GUID
 //
-// Format: "projects:<id>:events:<name>"
+// Ex: "projects:2:events:signup"
 //
 func GetEventKey(r redis.Conn, projectId int, name string) string {
 	return fmt.Sprintf("projects:%d:events:%s", projectId, name)
 }
 
-// Generate a key to track the number of events for this project this month
+// Generate a key to track the count of an event for this hour,
+// keyed by year / month / day / hour
+//
+// Ex: "projects:2:events:2013-08-22-13"
+//
+func GetEventCountKey(eventKey string) string {
+	now := time.Now()
+	yearNo := getYearNo(now)
+	monthNo := getMonthNo(now)
+	dayNo := getDayNo(now)
+	hourNo := getHourNo(now)
+	return fmt.Sprintf("%s:%s-%s-%s-%s", eventKey, yearNo, monthNo, dayNo, hourNo)
+}
+
+// Generate a key to track the number of events for this project this month,
+// keyed by year / month
 //
 // Ex: "projects:2:events:08-2014"
 //
-func GetProjectEventCountKey(projectId int) string {
+func GetProjectEventsCountKey(projectId int) string {
 	now := time.Now()
-	monthNo := strconv.Itoa(months[now.Month().String()])
-	if len(monthNo) == 1 {
-		monthNo = "0" + monthNo
-	}
-	year := strconv.Itoa(now.Year())
-	return fmt.Sprintf("projects:%d:events:%s-%s", projectId, monthNo, year)
+	monthNo := getMonthNo(now)
+	yearNo := getYearNo(now)
+	return fmt.Sprintf("projects:%d:events:%s-%s",
+		projectId, yearNo, monthNo)
 }
