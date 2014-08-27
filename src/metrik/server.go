@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"metrik/ingest"
+	"metrik/projects"
 	"metrik/query"
 
 	"github.com/garyburd/redigo/redis"
@@ -32,6 +33,7 @@ func main() {
 	m.Get("/v1/events", func(req *http.Request) (int, string) {
 		params := req.URL.Query()
 
+		// TODO: extract all these checks into a method, return a validated map ?
 		apiKey := params.Get("api_key")
 		if apiKey == "" {
 			return 400, "Invalid API key"
@@ -52,7 +54,12 @@ func main() {
 			return 400, err.Error()
 		}
 
-		events, err := query.Query(r, apiKey, eventName, start, end)
+		projectId, err := projects.GetProjectId(r, apiKey)
+		if err != nil {
+			return 400, "Invalid API key"
+		}
+
+		events, err := query.Query(r, projectId, eventName, start, end)
 		if err != nil {
 			return 400, err.Error() // TODO: better status code handling
 		}

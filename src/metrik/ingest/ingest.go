@@ -56,11 +56,12 @@ func marshalEvent(event map[string]interface{}) (string, error) {
 }
 
 func IngestEvent(r redis.Conn, eventParams EventParams) error {
-	eventKey, err := projects.GetEventKey(r, eventParams.ApiKey, eventParams.Name)
+	projectId, err := projects.GetProjectId(r, eventParams.ApiKey)
 	if err != nil {
 		// Couldn't find API key to build event key
 		return errors.New("Invalid API key")
 	}
+	eventKey := projects.GetEventKey(r, projectId, eventParams.Name)
 
 	milliTimestamp := time.Now().UnixNano() / 1e6
 	event, err := formatEvent(milliTimestamp, eventParams)
@@ -74,6 +75,10 @@ func IngestEvent(r redis.Conn, eventParams EventParams) error {
 	}
 
 	score := milliTimestamp
-	r.Do("ZADD", eventKey, score, marshalledEvent)
+	r.Send("MULTI")
+	r.Send("ZADD", eventKey, score, marshalledEvent)
+	// TODO: increment hourly count for this event
+	r.Send("INCR", projects.GetProjectEventCountKey(projectId))
+	r.Do("EXEC")
 	return nil
 }

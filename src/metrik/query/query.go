@@ -35,11 +35,8 @@ func ParseEndParam(rawEnd string) (int64, error) {
 }
 
 // TODO: better error handling
-func Query(r redis.Conn, apiKey string, eventName string, start, end int64) ([]string, error) {
-	eventsKey, err := projects.GetEventKey(r, apiKey, eventName)
-	if err != nil {
-		return nil, err
-	}
+func Query(r redis.Conn, projectId int, eventName string, start, end int64) ([]string, error) {
+	eventsKey := projects.GetEventKey(r, projectId, eventName)
 
 	rawEvents, err := redis.Strings(r.Do("ZRANGEBYSCORE", eventsKey, start, end))
 	if err != nil {
