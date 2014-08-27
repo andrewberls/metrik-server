@@ -33,7 +33,6 @@ func main() {
 	m.Get("/v1/events", func(req *http.Request) (int, string) {
 		params := req.URL.Query()
 
-		// TODO: extract all these checks into a method, return a validated map ?
 		apiKey := params.Get("api_key")
 		if apiKey == "" {
 			return 400, "Invalid API key"
