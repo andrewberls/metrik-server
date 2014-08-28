@@ -65,14 +65,10 @@ func HourlyEventCounts(r redis.Conn, projectKey string, eventName string, start 
 	monthNo := utils.GetMonthNo(now)
 	dayNo := utils.GetDayNo(now)
 
-	hourKeys := make([]interface{}, 24) // r.Do needs []interface{}, not []string
-
 	// Preconstruct hourly event keys and MGET
+	hourKeys := make([]interface{}, 24) // r.Do needs []interface{}, not []string
 	for i := 1; i < 24; i++ {
-		hourNo := strconv.Itoa(i)
-		if len(hourNo) == 1 {
-			hourNo = "0" + hourNo
-		}
+		hourNo := utils.Rjust(strconv.Itoa(i), 2, "0")
 		eventKey := fmt.Sprintf("%s:%s-%s-%s-%s",
 			eventKey, yearNo, monthNo, dayNo, hourNo)
 		hourKeys[i] = eventKey
@@ -96,10 +92,53 @@ func HourlyEventCounts(r redis.Conn, projectKey string, eventName string, start 
 }
 
 // TODO
-//func HourlyEvents(string, error) {
-//        // {
-//        //   1 => [{$id=>"a"}, {$id=>"b"}],
-//        //   2 => [{$id=>"a"}, {$id=>"b"}],
-//        //   3 => [{$id=>"a"}, {$id=>"b"}]
-//        // }
-//}
+// Ex format:
+//   {
+//     1 => [{$id=>"a"}, {$id=>"b"}],
+//     2 => [{$id=>"a"}, {$id=>"b"}],
+//     3 => [{$id=>"a"}, {$id=>"b"}],
+//     ...
+//   }
+//
+// TODO: inclusive zrangebyscore, so subtract 1 second from upper bounds
+// Needs confirmation via testing
+//
+func HourlyEvents(r redis.Conn, projectKey string, eventName string, start time.Time) (string, error) {
+	hourlyEvents := make(map[string][]string)
+
+	midnight := time.Date(start.Year(), start.Month(), start.Day(), 0, 0, 0, 0, start.Location())
+	lower := midnight
+	upper := lower.Add(time.Hour).Add(-time.Second) // TODO: inclusivity
+
+	// TODO: pipeline these calls
+
+	var events []string
+	for i := 0; i < 24; i++ {
+		reply, err := redis.Values(r.Do("ZRANGEBYSCORE",
+			projects.GetEventKey(r, projectKey, eventName),
+			utils.ToMilliTimestamp(lower),
+			utils.ToMilliTimestamp(upper)))
+		if err != nil {
+			panic(err) // TODO: ??
+		}
+		if err := redis.ScanSlice(reply, &events); err != nil {
+			panic(err)
+		}
+
+		if events == nil {
+			hourlyEvents[strconv.Itoa(i)] = []string{}
+		} else {
+			hourlyEvents[strconv.Itoa(i)] = events
+		}
+
+		// TODO: inclusivity
+		lower = upper
+		upper = lower.Add(time.Hour).Add(-time.Second)
+	}
+
+	marshalledEvents, err := json.Marshal(hourlyEvents)
+	if err != nil {
+		return "", err
+	}
+	return string(marshalledEvents), nil
+}

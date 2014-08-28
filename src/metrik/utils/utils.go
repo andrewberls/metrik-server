@@ -2,7 +2,12 @@ package utils
 
 import (
 	"strconv"
+	"strings"
 	"time"
+)
+
+const (
+	Hello = "world"
 )
 
 var months = map[string]int{
@@ -26,11 +31,8 @@ func GetYearNo(now time.Time) string {
 
 // Get the current month number 1-12, 0-padded to 2 digits
 func GetMonthNo(now time.Time) string {
-	monthNo := strconv.Itoa(months[now.Month().String()])
-	if len(monthNo) == 1 {
-		monthNo = "0" + monthNo
-	}
-	return monthNo
+	monthNo := months[now.Month().String()]
+	return Rjust(strconv.Itoa(monthNo), 2, "0")
 }
 
 func GetDayNo(now time.Time) string {
@@ -44,4 +46,15 @@ func GetHourNo(now time.Time) string {
 
 func GetMilliTimestamp() int64 {
 	return time.Now().UnixNano() / 1e6
+}
+
+func ToMilliTimestamp(t time.Time) int64 {
+	return t.Unix() * 1000
+}
+
+// Right-justify <str> and pad to <length> with <padstr>
+// Ex:
+//   Rjust("8", 2, "0") => "08"
+func Rjust(str string, length int, padstr string) string {
+	return strings.Repeat(padstr, length-len(str)) + str
 }
