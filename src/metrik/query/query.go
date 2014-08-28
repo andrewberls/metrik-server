@@ -49,11 +49,12 @@ func RangeQuery(r redis.Conn, projectKey string, eventName string, start, end in
 	return rawEvents, nil
 }
 
-// Return counts of a given event bucketed by hour
-// Ex:
+// Return counts of a given event bucketed by hour (as a marshalled JSON string)
+// Ex format:
 //   {
 //     1 => 257,
-//     2 => 109
+//     2 => 109,
+//     ...
 //   }
 func HourlyEventCounts(r redis.Conn, projectKey string, eventName string, start int64) (string, error) {
 	hourlyCounts := make(map[string]int)
@@ -64,7 +65,9 @@ func HourlyEventCounts(r redis.Conn, projectKey string, eventName string, start 
 	monthNo := utils.GetMonthNo(now)
 	dayNo := utils.GetDayNo(now)
 
-	// TODO: preconstruct keys, MGET
+	hourKeys := make([]interface{}, 24) // r.Do needs []interface{}, not []string
+
+	// Preconstruct hourly event keys and MGET
 	for i := 1; i < 24; i++ {
 		hourNo := strconv.Itoa(i)
 		if len(hourNo) == 1 {
@@ -72,12 +75,17 @@ func HourlyEventCounts(r redis.Conn, projectKey string, eventName string, start 
 		}
 		eventKey := fmt.Sprintf("%s:%s-%s-%s-%s",
 			eventKey, yearNo, monthNo, dayNo, hourNo)
-		count, err := redis.Int(r.Do("GET", eventKey))
-		if err != nil {
-			// Key missing = 0 events
-			hourlyCounts[strconv.Itoa(i)] = 0
+		hourKeys[i] = eventKey
+	}
+
+	eventCounts, err := redis.Strings(r.Do("MGET", hourKeys...))
+	for idx, strCount := range eventCounts {
+		if strCount == "" {
+			hourlyCounts[strconv.Itoa(idx)] = 0
+		} else {
+			intCount, _ := strconv.Atoi(strCount)
+			hourlyCounts[strconv.Itoa(idx)] = intCount
 		}
-		hourlyCounts[strconv.Itoa(i)] = count
 	}
 
 	marshalledCounts, err := json.Marshal(hourlyCounts)
