@@ -41,3 +41,7 @@ func GetDayNo(now time.Time) string {
 func GetHourNo(now time.Time) string {
 	return strconv.Itoa(now.Hour())
 }
+
+func GetMilliTimestamp() int64 {
+	return time.Now().UnixNano() / 1e6
+}

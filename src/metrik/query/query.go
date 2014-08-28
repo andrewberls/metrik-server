@@ -38,8 +38,8 @@ func ParseEndParam(rawEnd string) (int64, error) {
 }
 
 // TODO: better error handling
-func RangeQuery(r redis.Conn, projectId int, eventName string, start, end int64) ([]string, error) {
-	eventsKey := projects.GetEventKey(r, projectId, eventName)
+func RangeQuery(r redis.Conn, projectKey string, eventName string, start, end int64) ([]string, error) {
+	eventsKey := projects.GetEventKey(r, projectKey, eventName)
 
 	rawEvents, err := redis.Strings(r.Do("ZRANGEBYSCORE", eventsKey, start, end))
 	if err != nil {
@@ -55,9 +55,9 @@ func RangeQuery(r redis.Conn, projectId int, eventName string, start, end int64)
 //     1 => 257,
 //     2 => 109
 //   }
-func HourlyEventCounts(r redis.Conn, projectId int, eventName string, start int64) (string, error) {
+func HourlyEventCounts(r redis.Conn, projectKey string, eventName string, start int64) (string, error) {
 	hourlyCounts := make(map[string]int)
-	eventKey := projects.GetEventKey(r, projectId, eventName)
+	eventKey := projects.GetEventKey(r, projectKey, eventName)
 
 	now := time.Now()
 	yearNo := utils.GetYearNo(now)
@@ -87,6 +87,7 @@ func HourlyEventCounts(r redis.Conn, projectId int, eventName string, start int6
 	return string(marshalledCounts), nil
 }
 
+// TODO
 //func HourlyEvents(string, error) {
 //        // {
 //        //   1 => [{$id=>"a"}, {$id=>"b"}],

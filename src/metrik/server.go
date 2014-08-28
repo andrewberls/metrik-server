@@ -5,7 +5,6 @@ import (
 	"strings"
 
 	"metrik/ingest"
-	"metrik/projects"
 	"metrik/query"
 
 	"github.com/garyburd/redigo/redis"
@@ -38,6 +37,11 @@ func main() {
 			return 400, "Invalid API key"
 		}
 
+		projectKey := params.Get("project_key")
+		if projectKey == "" {
+			return 400, "Invalid project key"
+		}
+
 		eventName := params.Get("event")
 		if eventName == "" {
 			return 400, "Invalid event name"
@@ -53,12 +57,7 @@ func main() {
 			return 400, err.Error()
 		}
 
-		projectId, err := projects.GetProjectId(r, apiKey)
-		if err != nil {
-			return 400, "Invalid API key"
-		}
-
-		events, err := query.RangeQuery(r, projectId, eventName, start, end)
+		events, err := query.RangeQuery(r, projectKey, eventName, start, end)
 		if err != nil {
 			return 400, err.Error() // TODO: better status code handling
 		}
@@ -75,6 +74,11 @@ func main() {
 			return 400, "Invalid API key"
 		}
 
+		projectKey := params.Get("project_key")
+		if projectKey == "" {
+			return 400, "Invalid project key"
+		}
+
 		eventName := params.Get("event")
 		if eventName == "" {
 			return 400, "Invalid event name"
@@ -85,12 +89,7 @@ func main() {
 			return 400, err.Error()
 		}
 
-		projectId, err := projects.GetProjectId(r, apiKey)
-		if err != nil {
-			return 400, "Invalid API key"
-		}
-
-		hourlyEventCounts, err := query.HourlyEventCounts(r, projectId, eventName, start)
+		hourlyEventCounts, err := query.HourlyEventCounts(r, projectKey, eventName, start)
 		if err != nil {
 			return 400, err.Error() // TODO: better status code handling
 		}
