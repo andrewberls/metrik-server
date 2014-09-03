@@ -3,6 +3,7 @@ package ingest
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 
 	"metrik/projects"
 	"metrik/utils"
@@ -41,13 +42,8 @@ func formatEvent(timestamp int64, eventParams EventParams) (map[string]interface
 	return event, nil
 }
 
-// Main entry point to ingest an event given raw parameters
-// Transforms params into standard form hash, stores event in redis zset
-// using millitimestamp as score, counts the event for the project's monthly
-// quota, and counts the event for this hour
 func IngestEvent(r redis.Conn, eventParams EventParams) error {
 	projectKey := eventParams.ProjectKey
-	eventKey := projects.GetEventKey(r, projectKey, eventParams.Name)
 
 	milliTimestamp := utils.GetMilliTimestamp()
 	event, err := formatEvent(milliTimestamp, eventParams)
@@ -60,12 +56,29 @@ func IngestEvent(r redis.Conn, eventParams EventParams) error {
 		return err
 	}
 
-	score := milliTimestamp
+	eventId := event["$id"]
+	eventName := event["$name"].(string)
 
 	r.Send("MULTI")
-	r.Send("ZADD", eventKey, score, string(marshalledEvent))
-	r.Send("INCR", projects.GetEventCountKey(eventKey))
+
+	// Hash of id => json (ID lookup)
+	r.Send("HSET", projects.GetEventsKey(projectKey), eventId, marshalledEvent)
+
+	// Zset of timestamp => id (Time lookup)
+	fmt.Println("ingest, score ", milliTimestamp)
+	r.Send("ZADD", projects.GetEventTimesKey(projectKey, eventName), milliTimestamp, eventId)
+
+	// KV of name => [ids] (Name lookup)
+	r.Send("RPUSH", projects.GetEventNameKey(projectKey, eventName), eventId)
+
+	// Hourly counter for this event
+	// TODO - necessary ?
+	//r.Send("INCR", projects.GetEventCountKey(projectKey, eventName))
+
+	// Count event towards project quota
 	r.Send("INCR", projects.GetProjectEventsCountKey(projectKey))
+
+	// TODO:
 	r.Do("EXEC")
 
 	return nil

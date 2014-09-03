@@ -58,3 +58,15 @@ func ToMilliTimestamp(t time.Time) int64 {
 func Rjust(str string, length int, padstr string) string {
 	return strings.Repeat(padstr, length-len(str)) + str
 }
+
+// TODO - this is a hack
+// WE have to combine key and fields into a single slice to splat,
+// and need to convert []string ids to []interface{}
+func HmgetArgs(key string, fields []string) []interface{} {
+	args := make([]interface{}, len(fields)+1)
+	args[0] = key
+	for i, v := range fields {
+		args[i+1] = interface{}(v)
+	}
+	return args
+}
