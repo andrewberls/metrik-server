@@ -31,7 +31,7 @@ func formatEvent(timestamp int64, eventParams EventParams) (map[string]interface
 
 	var properties map[string]interface{}
 	if err := json.Unmarshal([]byte(eventParams.Properties), &properties); err != nil {
-		return nil, err // Invalid client-supplied JSOn
+		return nil, err // Invalid client-supplied JSON
 	}
 
 	event["$id"] = uuid.New()
