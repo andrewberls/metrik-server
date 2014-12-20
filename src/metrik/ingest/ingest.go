@@ -13,7 +13,6 @@ import (
 
 type EventParams struct {
 	Name       string `form:"event" binding:"required"`
-	ApiKey     string `form:"api_key" binding:"required"`
 	ProjectKey string `form:"project_key" binding:"required"`
 	Properties string `form:"properties" binding:"required"`
 }

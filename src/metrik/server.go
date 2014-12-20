@@ -33,11 +33,6 @@ func main() {
 	m.Get("/v1/events", func(req *http.Request) (int, string) {
 		params := req.URL.Query()
 
-		apiKey := params.Get("api_key")
-		if apiKey == "" {
-			return 400, "Invalid API key"
-		}
-
 		projectKey := params.Get("project_key")
 		if projectKey == "" {
 			return 400, "Invalid project key"
@@ -70,11 +65,6 @@ func main() {
 	m.Get("/v1/hourly_event_counts", func(req *http.Request) (int, string) {
 		params := req.URL.Query()
 
-		apiKey := params.Get("api_key")
-		if apiKey == "" {
-			return 400, "Invalid API key"
-		}
-
 		projectKey := params.Get("project_key")
 		if projectKey == "" {
 			return 400, "Invalid project key"
@@ -100,11 +90,6 @@ func main() {
 
 	m.Get("/v1/hourly_events", func(req *http.Request) (int, string) {
 		params := req.URL.Query()
-
-		apiKey := params.Get("api_key")
-		if apiKey == "" {
-			return 400, "Invalid API key"
-		}
 
 		projectKey := params.Get("project_key")
 		if projectKey == "" {
