@@ -3,7 +3,6 @@ package ingest
 import (
 	"encoding/json"
 	"errors"
-	"fmt"
 
 	"metrik/projects"
 	"metrik/utils"
@@ -65,7 +64,6 @@ func IngestEvent(r redis.Conn, eventParams EventParams) error {
 	r.Send("HSET", projects.GetEventsKey(projectKey), eventId, marshalledEvent)
 
 	// Zset of timestamp => id (Time lookup)
-	fmt.Println("ingest, score ", milliTimestamp)
 	r.Send("ZADD", projects.GetEventTimesKey(projectKey, eventName), milliTimestamp, eventId)
 
 	// KV of name => [ids] (Name lookup)
